@@ -5,7 +5,7 @@ using Mono.Cecil.Rocks;
 
 namespace ilspy
 {
-    class Program
+    static class Program
     {
         static void Main(string[] args)
         {
@@ -51,12 +51,7 @@ namespace ilspy
             var methodType = classType.GetMethods().FirstOrDefault(m => m.Name == methodName);
             if (methodType != null)
             {
-                var returnType = methodType.ReturnType.Name.ToLower();
-                var accessModifier = GetMethodAccessModifier(methodType);
-                var parameters = methodType.Parameters
-                    .Select(p => p.ParameterType.Name)
-                    .ToArray();
-                Console.WriteLine($"{accessModifier} {returnType} {methodName} ({String.Join(',', parameters)})");
+                PrintMethodSignature(methodType, classType);
 
                 //Print the method body's instructions
                 foreach (var instruction in methodType.Body.Instructions)
@@ -76,6 +71,10 @@ namespace ilspy
             {
                 return "private";
             }
+            if (!methodDefinition.IsPrivate && !methodDefinition.IsPublic)
+            {
+                return "protected";
+            }
 
             return "public";
         }
@@ -85,16 +84,24 @@ namespace ilspy
             //Returns a list of all classes that are present in the assembly
             var allTypes = module.GetTypes();
 
-            foreach (var typeDefinition in allTypes)
+            foreach (var classDefinition in allTypes)
             {
-                Console.WriteLine($"{typeDefinition.Name}");
+                Console.WriteLine($"{classDefinition.Name}");
                 //`typeDefinition.GetMethods()` returns a list of all methods for this class
-                foreach (var methodDefinition in typeDefinition.GetMethods())
+                foreach (var methodDefinition in classDefinition.GetMethods())
                 {
-                    var parameters = methodDefinition.Parameters.Select(p => $"{p.ParameterType.Name} {p.Name}");
-                    Console.WriteLine($"{typeDefinition}.{methodDefinition.Name} ({String.Join(',', parameters)})");
+                    PrintMethodSignature(methodDefinition, classDefinition);
                 }
             }
+        }
+
+        private static void PrintMethodSignature(MethodDefinition methodDefinition, TypeDefinition classDefinition)
+        {
+            var parameters = methodDefinition.Parameters.Select(p => $"{p.ParameterType.Name} {p.Name}");
+            var methodModifier = GetMethodAccessModifier(methodDefinition);
+            var staticOrInstance = methodDefinition.IsStatic ? " static " : " ";
+            Console.WriteLine(
+                $"{methodModifier}{staticOrInstance}{classDefinition}.{methodDefinition.Name} ({String.Join(',', parameters)})");
         }
     }
 }
