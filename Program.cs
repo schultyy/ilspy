@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 
@@ -17,9 +18,51 @@ namespace ilspy
             }
 
             var assemblyPath = args[0];
+            string className = null;
+            string methodName = null;
+
+            //Let's check if the user provided us with a class and method name to inspect
+            if (args.Length > 1)
+            {
+                //We require the user to use a `Class.Method` notation
+                className = args[1].Split(".")[0];
+                methodName = args[1].Split(".")[1];
+            }
 
             var module = ModuleDefinition.ReadModule(assemblyPath);
-            ShowAllTypes(module);
+
+            //Check if we received class and method name
+            if (String.IsNullOrEmpty(className) && string.IsNullOrEmpty(methodName))
+            {
+                //If not, we just display all types as usual
+                ShowAllTypes(module);
+            }
+            else
+            {
+                //Show details for this specific type
+                ShowSpecificType(module, className, methodName);
+            }
+        }
+
+        private static void ShowSpecificType(ModuleDefinition module, string className, string methodName)
+        {
+            //We find the specific class by its name
+            var classType = module.GetTypes().FirstOrDefault(t => t.Name == className);
+            //Then, we extract the specific method from that class
+            var methodType = classType.GetMethods().FirstOrDefault(m => m.Name == methodName);
+
+            if (methodType != null)
+            {
+                //Print the method body's instructions
+                foreach (var instruction in methodType.Body.Instructions)
+                {
+                    Console.WriteLine($"{instruction}");
+                }
+            }
+            else
+            {
+                Console.Error.WriteLine("Couldn't find method definition");
+            }
         }
 
         private static void ShowAllTypes(ModuleDefinition module)
