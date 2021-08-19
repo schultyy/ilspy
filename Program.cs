@@ -48,11 +48,16 @@ namespace ilspy
         {
             //We find the specific class by its name
             var classType = module.GetTypes().FirstOrDefault(t => t.Name == className);
-            //Then, we extract the specific method from that class
             var methodType = classType.GetMethods().FirstOrDefault(m => m.Name == methodName);
-
             if (methodType != null)
             {
+                var returnType = methodType.ReturnType.Name.ToLower();
+                var accessModifier = GetMethodAccessModifier(methodType);
+                var parameters = methodType.Parameters
+                    .Select(p => p.ParameterType.Name)
+                    .ToArray();
+                Console.WriteLine($"{accessModifier} {returnType} {methodName} ({String.Join(',', parameters)})");
+
                 //Print the method body's instructions
                 foreach (var instruction in methodType.Body.Instructions)
                 {
@@ -63,6 +68,16 @@ namespace ilspy
             {
                 Console.Error.WriteLine("Couldn't find method definition");
             }
+        }
+
+        private static string GetMethodAccessModifier(MethodDefinition methodDefinition)
+        {
+            if (methodDefinition.IsPrivate && !methodDefinition.IsPublic)
+            {
+                return "private";
+            }
+
+            return "public";
         }
 
         private static void ShowAllTypes(ModuleDefinition module)
@@ -76,7 +91,8 @@ namespace ilspy
                 //`typeDefinition.GetMethods()` returns a list of all methods for this class
                 foreach (var methodDefinition in typeDefinition.GetMethods())
                 {
-                    Console.WriteLine($"{typeDefinition}.{methodDefinition.Name}");
+                    var parameters = methodDefinition.Parameters.Select(p => $"{p.ParameterType.Name} {p.Name}");
+                    Console.WriteLine($"{typeDefinition}.{methodDefinition.Name} ({String.Join(',', parameters)})");
                 }
             }
         }
