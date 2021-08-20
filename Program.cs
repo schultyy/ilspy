@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 
 namespace ilspy
@@ -13,20 +14,59 @@ namespace ilspy
             if (args.Length < 1)
             {
                 Console.Error.WriteLine("Expected Assembly path. Got: None");
-                Console.Error.WriteLine("Usage: ilspy <assembly path> [<class.method>]");
+                Console.Error.WriteLine("Usage: ilspy <command> <args>");
+                Console.Error.WriteLine("Commands:");
+                Console.Error.WriteLine("types <assembly path> [<class.method>]");
+                Console.Error.WriteLine("graph <assembly path>");
                 return;
             }
 
-            var assemblyPath = args[0];
+            if (args[0] == "types")
+            {
+                ShowTypes(args);
+            }
+            else if (args[0] == "graph")
+            {
+                BuildDependencyGraph(args);
+            }
+
+        }
+
+        private static void BuildDependencyGraph(string[] args)
+        {
+            var assemblyPath = args[1];
+            var module = ModuleDefinition.ReadModule(assemblyPath);
+            var allTypes = module.GetTypes();
+
+            foreach (var classDefinition in allTypes)
+            {
+                Console.WriteLine($"##{classDefinition.Name}");
+
+                foreach (var methodDefinition in classDefinition.GetMethods())
+                {
+                    foreach (var instruction in methodDefinition.Body.Instructions)
+                    {
+                        if (instruction.OpCode == OpCodes.Call)
+                        {
+                            Console.WriteLine($"--> {instruction.Operand}");
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void ShowTypes(string[] args)
+        {
+            var assemblyPath = args[1];
             string className = null;
             string methodName = null;
 
             //Let's check if the user provided us with a class and method name to inspect
-            if (args.Length > 1)
+            if (args.Length > 2)
             {
                 //We require the user to use a `Class.Method` notation
-                className = args[1].Split(".")[0];
-                methodName = args[1].Split(".")[1];
+                className = args[2].Split(".")[0];
+                methodName = args[2].Split(".")[1];
             }
 
             var module = ModuleDefinition.ReadModule(assemblyPath);
