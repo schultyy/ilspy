@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -17,7 +18,7 @@ namespace ilspy
                 Console.Error.WriteLine("Usage: ilspy <command> <args>");
                 Console.Error.WriteLine("Commands:");
                 Console.Error.WriteLine("types <assembly path> [<class.method>]");
-                Console.Error.WriteLine("graph <assembly path>");
+                Console.Error.WriteLine("graph <assembly path> [class]");
                 return;
             }
 
@@ -28,15 +29,28 @@ namespace ilspy
             else if (args[0] == "graph")
             {
                 var assemblyPath = args[1];
-                BuildDependencyGraph(assemblyPath);
-            }
+                var classesToInspect = new List<string>();
 
+                if (args.Length > 2)
+                {
+                    classesToInspect.Add(args[2]);
+                }
+                BuildDependencyGraph(assemblyPath, classesToInspect);
+            }
         }
 
-        private static void BuildDependencyGraph(string assemblyPath)
+        private static void BuildDependencyGraph(string assemblyPath, List<string> classesToInspect)
         {
             var module = ModuleDefinition.ReadModule(assemblyPath);
-            var allTypes = module.GetTypes();
+            IEnumerable<TypeDefinition> allTypes;
+            if (classesToInspect.Count > 0)
+            {
+                allTypes = module.GetTypes().Where(t => classesToInspect.Contains(t.Name));
+            }
+            else
+            {
+                allTypes = module.GetTypes();
+            }
 
             foreach (var classDefinition in allTypes)
             {
