@@ -27,14 +27,14 @@ namespace ilspy
             }
             else if (args[0] == "graph")
             {
-                BuildDependencyGraph(args);
+                var assemblyPath = args[1];
+                BuildDependencyGraph(assemblyPath);
             }
 
         }
 
-        private static void BuildDependencyGraph(string[] args)
+        private static void BuildDependencyGraph(string assemblyPath)
         {
-            var assemblyPath = args[1];
             var module = ModuleDefinition.ReadModule(assemblyPath);
             var allTypes = module.GetTypes();
 
