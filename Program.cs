@@ -29,21 +29,22 @@ namespace ilspy
             else if (args[0] == "graph")
             {
                 var assemblyPath = args[1];
-                var classesToInspect = new List<string>();
+                String[] classesToInspect = new string[]{};
 
                 if (args.Length > 2)
                 {
-                    classesToInspect.Add(args[2]);
+                    classesToInspect = args.Skip(2)
+                                            .ToArray();
                 }
                 BuildDependencyGraph(assemblyPath, classesToInspect);
             }
         }
 
-        private static void BuildDependencyGraph(string assemblyPath, List<string> classesToInspect)
+        private static void BuildDependencyGraph(string assemblyPath, string[] classesToInspect)
         {
             var module = ModuleDefinition.ReadModule(assemblyPath);
             IEnumerable<TypeDefinition> allTypes;
-            if (classesToInspect.Count > 0)
+            if (classesToInspect.Any())
             {
                 allTypes = module.GetTypes().Where(t => classesToInspect.Contains(t.Name));
             }
