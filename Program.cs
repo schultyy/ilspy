@@ -43,31 +43,58 @@ namespace ilspy
         private static void BuildDependencyGraph(string assemblyPath, string[] classesToInspect)
         {
             var module = ModuleDefinition.ReadModule(assemblyPath);
-            IEnumerable<TypeDefinition> allTypes;
+            TypeDefinition[] allTypes;
             if (classesToInspect.Any())
             {
-                allTypes = module.GetTypes().Where(t => classesToInspect.Contains(t.Name));
+                allTypes = module.GetTypes()
+                    .Where(t => classesToInspect.Contains(t.Name))
+                    .ToArray();
             }
             else
             {
-                allTypes = module.GetTypes();
+                allTypes = module.GetTypes()
+                                .ToArray();
             }
 
-            foreach (var classDefinition in allTypes)
+            var nodes = new List<Node>();
+            int id = 0;
+            for(var classDefinitionIndex = 0; classDefinitionIndex < allTypes.Count(); classDefinitionIndex++)
             {
-                Console.WriteLine($"##{classDefinition.Name}");
+                var classDefinition = allTypes[classDefinitionIndex];
+                var node = new Node(id++, classDefinition.Name);
 
                 foreach (var methodDefinition in classDefinition.GetMethods())
                 {
-                    foreach (var instruction in methodDefinition.Body.Instructions)
+
+                    foreach (var instruction in methodDefinition.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Call))
                     {
-                        if (instruction.OpCode == OpCodes.Call)
+                        var type = instruction.Operand.GetType();
+                        var operand = instruction.Operand;
+                        if (type == typeof(Mono.Cecil.MethodDefinition))
                         {
-                            Console.WriteLine($"--> {instruction.Operand}");
+                            node.Children.Add(new Node(id, ((MethodDefinition) operand).FullName));
                         }
+                        else if (type == typeof(MethodReference))
+                        {
+                            node.Children.Add(new Node(id, ((MethodReference) operand).FullName));
+                        }
+                        else if (type == typeof(GenericInstanceMethod))
+                        {
+                            node.Children.Add(new Node(id, ((GenericInstanceMethod) operand).FullName));
+                        }
+                        else
+                        {
+                            node.Children.Add(new Node(id, operand.ToString()));
+                        }
+
+                        id++;
                     }
                 }
+                nodes.Add(node);
             }
+
+            var dataSet = new DataSet(nodes);
+            new GraphPlotter(dataSet).WriteToFile("output.html");
         }
 
         private static void ShowTypes(string[] args)
