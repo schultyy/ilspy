@@ -93,6 +93,7 @@ namespace ilspy
 
             var graphPlotter = new GraphPlotter(dataSet);
             graphPlotter.WriteToFile("output.html");
+            Console.WriteLine("Wrote data to output.html");
         }
 
         private static void ShowTypes(string[] args)

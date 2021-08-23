@@ -24,6 +24,18 @@ Print bytecode instructions for a specific method:
 $ dotnet run myassembly.dll Greeter.Hello
 ```
 
+Generate a dependency graph for a given assembly:
+
+```
+$ dotnet run graph myassembly.dll 
+```
+
+Generate a dependency graph for specific types for a given assembly:
+
+```
+$ dotnet run graph myassembly.dll Greeter MyClass
+```
+
 ## License
 
 MIT
