@@ -1,26 +1,19 @@
-using System;
-using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace ilspy
 {
     public class Node
     {
-
         [JsonPropertyName("id")]
-        public int Id { get; set; }
+        public string Id { get; private set; }
 
-        [JsonPropertyName("name")]
-        public String Name { get; set; }
+        [JsonPropertyName("group")]
+        public int Group { get; private set; }
 
-        [JsonIgnore]
-        public List<Node> Children { get; set; }
-
-        public Node(int id, String name)
+        public Node(string id, int group)
         {
             this.Id = id;
-            this.Name = name;
-            this.Children = new List<Node>();
+            this.Group = group;
         }
     }
 }

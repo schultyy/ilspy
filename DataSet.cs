@@ -11,28 +11,20 @@ namespace ilspy
         [JsonPropertyName("links")]
         public List<Link> Links { get; private set; }
 
-        public DataSet(List<Node> nodes)
+        public DataSet(List<DependencyGraph> dependencyGraphs)
         {
             this.Nodes = new List<Node>();
             this.Links = new List<Link>();
 
-            this.ProcessNodes(nodes);
-
-            foreach (var node in nodes)
+            for (int i = 0; i < dependencyGraphs.Count; i++)
             {
-                foreach (var nodeChild in node.Children)
+                var currentGraph = dependencyGraphs[i];
+                Nodes.Add(new Node(currentGraph.RootNode, i));
+                foreach (var dependency in currentGraph.Dependencies)
                 {
-                    Links.Add(new Link(node.Id, nodeChild.Id));
+                    Nodes.Add(new Node(dependency, i));
+                    Links.Add(new Link(dependency, currentGraph.RootNode, i));
                 }
-            }
-        }
-
-        private void ProcessNodes(List<Node> nodes)
-        {
-            foreach (var node in nodes)
-            {
-                this.Nodes.Add(node);
-                this.ProcessNodes(node.Children);
             }
         }
     }
